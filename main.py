@@ -61,8 +61,19 @@ def get_bets(
     user=Depends(require_read),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Max number of items to return"),
+    outcome: str = Query(None, description="Filter by outcome (Won, Lost, Draw, Pending)"),
+    type: str = Query(None, description="Filter by type (Winner, Total, Handicap, Other)"),
+    favorite: bool = Query(None, description="Filter by favorite (true/false)"),
 ):
     all_bets = list(bets.values())
+    # Filtering
+    if outcome is not None:
+        all_bets = [b for b in all_bets if b.outcome == outcome]
+    if type is not None:
+        all_bets = [b for b in all_bets if b.type == type]
+    if favorite is not None:
+        all_bets = [b for b in all_bets if b.favorite == favorite]
+    # Pagination
     return all_bets[skip : skip + limit]
 
 # Get a specific bet by ID
