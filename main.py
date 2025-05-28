@@ -5,15 +5,18 @@ from schemas import Bet, Wallet, WalletTransaction
 from models import bets, wallet, wallet_transactions
 from auth import create_access_token, ROLES_PERMISSIONS, get_current_user
 
-app = FastAPI()
+app = FastAPI(
+    title="Bet Tracker API",
+    description="API for Bet Tracker with JWT Auth. Manage bets, wallet, and transactions."
+)
 
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="Bet Tracker API",
-        version="1.0.0",
-        description="API for Bet Tracker with JWT Auth",
+        title=app.title,
+        version=app.version,
+        description=app.description,
         routes=app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
@@ -44,8 +47,14 @@ def require_write(credentials: HTTPAuthorizationCredentials = Security(HTTPBeare
 def require_delete(credentials: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     return get_current_user(credentials, required_permissions=["DELETE"])
 
-# Create a new bet
-@app.post("/bets", response_model=Bet, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/bets",
+    response_model=Bet,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Bets"],
+    summary="Create a new bet",
+    description="Create a new bet. Requires WRITE permission.",
+)
 def create_bet(
     bet: Bet,
     user=Depends(require_write)
@@ -55,8 +64,14 @@ def create_bet(
     bets[bet.id] = bet
     return bet
 
-# Get all bets
-@app.get("/bets", response_model=List[Bet], status_code=status.HTTP_200_OK)
+@app.get(
+    "/bets",
+    response_model=List[Bet],
+    status_code=status.HTTP_200_OK,
+    tags=["Bets"],
+    summary="Get all bets",
+    description="Get all bets with optional pagination and filtering. Requires READ permission.",
+)
 def get_bets(
     user=Depends(require_read),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
@@ -76,8 +91,14 @@ def get_bets(
     # Pagination
     return all_bets[skip : skip + limit]
 
-# Get a specific bet by ID
-@app.get("/bets/{bet_id}", response_model=Bet, status_code=status.HTTP_200_OK)
+@app.get(
+    "/bets/{bet_id}",
+    response_model=Bet,
+    status_code=status.HTTP_200_OK,
+    tags=["Bets"],
+    summary="Get a bet by ID",
+    description="Get a specific bet by its ID. Requires READ permission.",
+)
 def get_bet(
     bet_id: str,
     user=Depends(require_read)
@@ -87,8 +108,14 @@ def get_bet(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bet not found.")
     return bet
 
-# Update an existing bet
-@app.put("/bets/{bet_id}", response_model=Bet, status_code=status.HTTP_200_OK)
+@app.put(
+    "/bets/{bet_id}",
+    response_model=Bet,
+    status_code=status.HTTP_200_OK,
+    tags=["Bets"],
+    summary="Update a bet",
+    description="Update an existing bet by ID. Requires WRITE permission.",
+)
 def update_bet(
     bet_id: str,
     bet_update: Bet,
@@ -99,8 +126,13 @@ def update_bet(
     bets[bet_id] = bet_update
     return bet_update
 
-# Delete a bet
-@app.delete("/bets/{bet_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete(
+    "/bets/{bet_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Bets"],
+    summary="Delete a bet",
+    description="Delete a bet by ID. Requires DELETE permission.",
+)
 def delete_bet(
     bet_id: str,
     user=Depends(require_delete)
@@ -110,15 +142,27 @@ def delete_bet(
     del bets[bet_id]
     return
 
-# Get wallet info
-@app.get("/wallet", response_model=Wallet, status_code=status.HTTP_200_OK)
+@app.get(
+    "/wallet",
+    response_model=Wallet,
+    status_code=status.HTTP_200_OK,
+    tags=["Wallet"],
+    summary="Get wallet info",
+    description="Get wallet balance and transactions. Requires READ permission.",
+)
 def get_wallet(
     user=Depends(require_read)
 ):
     return wallet
 
-# Get all wallet transactions
-@app.get("/wallet/transactions", response_model=List[WalletTransaction], status_code=status.HTTP_200_OK)
+@app.get(
+    "/wallet/transactions",
+    response_model=List[WalletTransaction],
+    status_code=status.HTTP_200_OK,
+    tags=["Wallet"],
+    summary="Get wallet transactions",
+    description="Get all wallet transactions with pagination. Requires READ permission.",
+)
 def get_wallet_transactions(
     user=Depends(require_read),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
@@ -127,8 +171,14 @@ def get_wallet_transactions(
     all_transactions = list(wallet_transactions.values())
     return all_transactions[skip : skip + limit]
 
-# Get a specific wallet transaction by ID
-@app.get("/wallet/transactions/{transaction_id}", response_model=WalletTransaction, status_code=status.HTTP_200_OK)
+@app.get(
+    "/wallet/transactions/{transaction_id}",
+    response_model=WalletTransaction,
+    status_code=status.HTTP_200_OK,
+    tags=["Wallet"],
+    summary="Get wallet transaction by ID",
+    description="Get a specific wallet transaction by ID. Requires READ permission.",
+)
 def get_wallet_transaction(
     transaction_id: str,
     user=Depends(require_read)
@@ -138,8 +188,14 @@ def get_wallet_transaction(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found.")
     return transaction
 
-# Create a new wallet transaction
-@app.post("/wallet/transactions", response_model=WalletTransaction, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/wallet/transactions",
+    response_model=WalletTransaction,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Wallet"],
+    summary="Create wallet transaction",
+    description="Create a new wallet transaction. Requires WRITE permission.",
+)
 def create_wallet_transaction(
     transaction: WalletTransaction,
     user=Depends(require_write)
@@ -154,8 +210,13 @@ def create_wallet_transaction(
         wallet.balance -= transaction.amount
     return transaction
 
-# Delete a wallet transaction
-@app.delete("/wallet/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete(
+    "/wallet/transactions/{transaction_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Wallet"],
+    summary="Delete wallet transaction",
+    description="Delete a wallet transaction by ID. Requires DELETE permission.",
+)
 def delete_wallet_transaction(
     transaction_id: str,
     user=Depends(require_delete)
@@ -171,8 +232,12 @@ def delete_wallet_transaction(
     del wallet_transactions[transaction_id]
     return
 
-# Generate a token for a user
-@app.post("/token")
+@app.post(
+    "/token",
+    tags=["Auth"],
+    summary="Generate JWT token",
+    description="Generate a JWT token for a given role. Roles: USER, VISITOR.",
+)
 def generate_token(
     role: str = Body(default="VISITOR")
 ):
