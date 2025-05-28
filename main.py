@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, status
-from typing import List
+from fastapi import FastAPI, HTTPException, status, Depends, Body
+from typing import List, Optional
 from schemas import Bet, Wallet, WalletTransaction
 from models import bets, wallet, wallet_transactions
+from auth import create_access_token, ROLES_PERMISSIONS
 
 app = FastAPI()
 
@@ -86,3 +87,20 @@ def delete_wallet_transaction(transaction_id: str):
         wallet.balance += transaction.amount
     del wallet_transactions[transaction_id]
     return
+
+# Generate a token for a user
+@app.post("/token")
+def generate_token(
+    role: Optional[str] = Body(default="VISITOR"),
+    permissions: Optional[List[str]] = Body(default=None)
+):
+    # Validate role
+    if role not in ROLES_PERMISSIONS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+    perms = permissions if permissions is not None else ROLES_PERMISSIONS[role]
+    token_data = {
+        "role": role,
+        "permissions": perms,
+    }
+    access_token = create_access_token(token_data)
+    return {"access_token": access_token, "token_type": "bearer"}
