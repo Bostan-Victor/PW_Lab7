@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, Depends, Body
+from fastapi import FastAPI, HTTPException, status, Depends, Body, Query
 from fastapi.openapi.utils import get_openapi
 from typing import List
 from schemas import Bet, Wallet, WalletTransaction
@@ -58,9 +58,12 @@ def create_bet(
 # Get all bets
 @app.get("/bets", response_model=List[Bet], status_code=status.HTTP_200_OK)
 def get_bets(
-    user=Depends(require_read)
+    user=Depends(require_read),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Max number of items to return"),
 ):
-    return list(bets.values())
+    all_bets = list(bets.values())
+    return all_bets[skip : skip + limit]
 
 # Get a specific bet by ID
 @app.get("/bets/{bet_id}", response_model=Bet, status_code=status.HTTP_200_OK)
@@ -106,9 +109,12 @@ def get_wallet(
 # Get all wallet transactions
 @app.get("/wallet/transactions", response_model=List[WalletTransaction], status_code=status.HTTP_200_OK)
 def get_wallet_transactions(
-    user=Depends(require_read)
+    user=Depends(require_read),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Max number of items to return"),
 ):
-    return list(wallet_transactions.values())
+    all_transactions = list(wallet_transactions.values())
+    return all_transactions[skip : skip + limit]
 
 # Get a specific wallet transaction by ID
 @app.get("/wallet/transactions/{transaction_id}", response_model=WalletTransaction, status_code=status.HTTP_200_OK)

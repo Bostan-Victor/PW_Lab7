@@ -4,9 +4,9 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-SECRET_KEY = ""
+SECRET_KEY = "a7f4c3d91b8e6f0a2d5b9e7c4a1f3d6b"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 ROLES_PERMISSIONS = {
     "USER": ["READ", "WRITE", "DELETE"],
