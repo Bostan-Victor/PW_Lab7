@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status
 from typing import List
-from schemas import Bet
-from models import bets
+from schemas import Bet, Wallet, WalletTransaction
+from models import bets, wallet, wallet_transactions
 
 app = FastAPI()
 
@@ -40,3 +40,47 @@ def delete_bet(bet_id: str):
     if bet_id not in bets:
         raise HTTPException(status_code=404, detail="Bet not found.")
     del bets[bet_id]
+
+# Get wallet info
+@app.get("/wallet", response_model=Wallet)
+def get_wallet():
+    return wallet
+
+# Get all wallet transactions
+@app.get("/wallet/transactions", response_model=List[WalletTransaction])
+def get_wallet_transactions():
+    return list(wallet_transactions.values())
+
+# Get a specific wallet transaction by ID
+@app.get("/wallet/transactions/{transaction_id}", response_model=WalletTransaction)
+def get_wallet_transaction(transaction_id: str):
+    transaction = wallet_transactions.get(transaction_id)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+    return transaction
+
+# Create a new wallet transaction
+@app.post("/wallet/transactions", response_model=WalletTransaction, status_code=status.HTTP_201_CREATED)
+def create_wallet_transaction(transaction: WalletTransaction):
+    if transaction.id in wallet_transactions:
+        raise HTTPException(status_code=400, detail="Transaction with this ID already exists.")
+    wallet_transactions[transaction.id] = transaction
+    wallet.transactions.append(transaction)
+    if transaction.type == "deposit":
+        wallet.balance += transaction.amount
+    elif transaction.type == "withdrawal":
+        wallet.balance -= transaction.amount
+    return transaction
+
+# Delete a wallet transaction
+@app.delete("/wallet/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_wallet_transaction(transaction_id: str):
+    transaction = wallet_transactions.get(transaction_id)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+    wallet.transactions = [t for t in wallet.transactions if t.id != transaction_id]
+    if transaction.type == "deposit":
+        wallet.balance -= transaction.amount
+    elif transaction.type == "withdrawal":
+        wallet.balance += transaction.amount
+    del wallet_transactions[transaction_id]
