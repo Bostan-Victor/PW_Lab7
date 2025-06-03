@@ -4,10 +4,19 @@ from typing import List
 from schemas import Bet, Wallet, WalletTransaction
 from models import bets, wallet, wallet_transactions
 from auth import create_access_token, ROLES_PERMISSIONS, get_current_user
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Bet Tracker API",
     description="API for Bet Tracker with JWT Auth. Manage bets, wallet, and transactions."
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 def custom_openapi():
